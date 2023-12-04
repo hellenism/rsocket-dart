@@ -46,13 +46,23 @@ class CompleterSubscriber implements Subscriber {
 
 class StreamSubscriber implements Subscriber {
   final StreamController controller;
+int recvN;
+  Function()? getReqN;
 
-  StreamSubscriber({FutureOr<void> onCancel()? = null})
-      : controller = StreamController(onCancel: onCancel);
+  StreamSubscriber(
+      {int initN = MAX_REQUEST_N_SIZE,
+      int onGetReqN()? = null,
+      FutureOr<void> onCancel()? = null})
+      : controller = StreamController(onCancel: onCancel),
+        recvN = initN,
+        getReqN = onGetReqN;
 
   @override
   void onNext(Payload? value) {
     controller.add(value);
+        if (getReqN != null && recvN < MAX_REQUEST_N_SIZE && --recvN == 0) {
+      recvN = getReqN!();
+    }
   }
 
   @override
@@ -130,6 +140,25 @@ class RSocketRequester extends RSocket {
         connection.write(FrameCodec.encodeCancelFrame(streamId));
         senders.remove(streamId);
       });
+      senders[streamId] = streamSubscriber;
+      return streamSubscriber.payloadStream();
+    };
+    //RSocket requestStream
+    requestStreamN = (initN, payload, getReqN) {
+      var streamId = streamIdSupplier.nextStreamId(senders)!;
+      connection.write(
+          FrameCodec.encodeRequestStreamFrame(streamId, initN, payload!));
+      var streamSubscriber = StreamSubscriber(
+          initN: initN,
+          onGetReqN: () {
+            var reqN = (getReqN == null ? initN : getReqN());
+            connection.write(FrameCodec.encodeRequestNFrame(streamId, reqN));
+            return reqN;
+          },
+          onCancel: () {
+            connection.write(FrameCodec.encodeCancelFrame(streamId));
+            senders.remove(streamId);
+          });
       senders[streamId] = streamSubscriber;
       return streamSubscriber.payloadStream();
     };

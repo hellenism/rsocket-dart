@@ -3,6 +3,8 @@ import 'payload.dart';
 typedef RequestResponse = Future<Payload> Function(Payload? payload);
 typedef FireAndForget = Future<void> Function(Payload? payload);
 typedef RequestStream = Stream<Payload?> Function(Payload? payload);
+typedef RequestStreamN = Stream<Payload?> Function(
+    int initN, Payload? payload, Function()? getRegN);
 typedef RequestChannel = Stream<Payload> Function(Stream<Payload> payloads);
 typedef MetadataPush = Future<void> Function(Payload? payload);
 typedef RSocketClose = void Function();
@@ -22,6 +24,9 @@ class RSocket implements Closeable, Availability {
       (Payload? payload) => Future.error(Exception('Unsupported'));
   RequestStream? requestStream =
       (Payload? payload) => Stream.error(Exception('Unsupported'));
+  RequestStreamN? requestStreamN =
+      (int initN, Payload? payload, Function()? getRegN) =>
+          Stream.error(Exception('Unsupported'));
   RequestChannel? requestChannel =
       (Stream<Payload> payloads) => Stream.error(Exception('Unsupported'));
   MetadataPush? metadataPush =
