@@ -44,19 +44,17 @@ class CompleterSubscriber implements Subscriber {
   }
 }
 
-
-
 class StreamSubscriber implements Subscriber {
   final StreamController controller;
-  final Completer? completer;
-  final Function? onGetReqN;
-  
+  final Function? onInvokeNext;
+  final Map? params;
+
   int recvN;
 
   StreamSubscriber(
     {int initN = MAX_REQUEST_N_SIZE,
-    this.completer,
-    this.onGetReqN, 
+    this.onInvokeNext, 
+    this.params,
     FutureOr<void> onCancel()? = null}) : controller = StreamController(onCancel: onCancel),
         recvN = initN;
 
@@ -64,11 +62,7 @@ class StreamSubscriber implements Subscriber {
   void onNext(Payload? value) async{
     controller.add(value);
     if (recvN < MAX_REQUEST_N_SIZE && --recvN == 0) {
-      final completer = this.completer;
-      if(completer != null){
-        await completer.future;
-      }
-      recvN = onGetReqN?.call();
+      onInvokeNext?.call(this.params);
     }
   }
 
@@ -150,18 +144,18 @@ class RSocketRequester extends RSocket {
       senders[streamId] = streamSubscriber;
       return streamSubscriber.payloadStream();
     };
-    //RSocket requestStreamN
+
     requestStreamN = (initN, getReqN, Completer, payload) {
       var streamId = streamIdSupplier.nextStreamId(senders)!;
       connection.write(
           FrameCodec.encodeRequestStreamFrame(streamId, initN, payload!));
       var streamSubscriber = StreamSubscriber(
           initN: initN,
-          onGetReqN: () {
-            var reqN = (getReqN == null ? initN : getReqN());
-            connection.write(FrameCodec.encodeRequestNFrame(streamId, reqN));
-            return reqN;
-          },
+          // onInvokeNext: () {
+          //   var reqN = (getReqN == null ? initN : getReqN());
+          //   connection.write(FrameCodec.encodeRequestNFrame(streamId, reqN));
+          //   return reqN;
+          // },
           onCancel: () {
             connection.write(FrameCodec.encodeCancelFrame(streamId));
             senders.remove(streamId);
@@ -169,11 +163,33 @@ class RSocketRequester extends RSocket {
       senders[streamId] = streamSubscriber;
       return streamSubscriber.payloadStream();
     };
+
+    requestStreamNSL = (initN, payload, connection, streamId, invokeOnNext) {
+      var streamId = streamIdSupplier.nextStreamId(senders)!;
+      connection.write(FrameCodec.encodeRequestStreamFrame(streamId, initN, payload!));
+      Map param = {
+        'connection': connection,
+        'streamId': streamId,
+      };
+      var streamSubscriber = StreamSubscriber(
+          initN: initN,
+          params: param,
+          onInvokeNext: invokeOnNext,
+          onCancel: () {
+            connection.write(FrameCodec.encodeCancelFrame(streamId));
+            senders.remove(streamId);
+          }
+      );
+      senders[streamId] = streamSubscriber;
+      return streamSubscriber.payloadStream();
+    };
+
     //RSocket metadataPush
     metadataPush = (payload) {
       connection.write(FrameCodec.encodeMetadataFrame(0, payload!));
       return Future.value(() {});
     };
+
     //Rsocket Channel
     /*requestChannel = (payloads) {
       var streamId = streamIdSupplier.nextStreamId(senders);
