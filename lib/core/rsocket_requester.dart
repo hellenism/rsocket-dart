@@ -164,7 +164,7 @@ class RSocketRequester extends RSocket {
       return streamSubscriber.payloadStream();
     };
 
-    requestStreamNSL = (initN, payload, connection, streamId, invokeOnNext) {
+    requestStreamNSL = (initN, payload, invokeOnNext) {
       var streamId = streamIdSupplier.nextStreamId(senders)!;
       connection.write(FrameCodec.encodeRequestStreamFrame(streamId, initN, payload!));
       Map param = {

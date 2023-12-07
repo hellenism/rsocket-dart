@@ -1,14 +1,11 @@
 import 'dart:async';
-
-import 'package:rsocket/duplex_connection.dart';
-
 import 'payload.dart';
 
 typedef RequestResponse = Future<Payload> Function(Payload? payload);
 typedef FireAndForget = Future<void> Function(Payload? payload);
 typedef RequestStream = Stream<Payload?> Function(Payload? payload);
 typedef RequestStreamN = Stream<Payload?> Function(int initN,Function? getRegN, Completer? completer, Payload? payload);
-typedef RequestStreamNSL = Stream<Payload?> Function(int initN, Payload? payload, DuplexConnection connection, int? streamId, Function? invokeOnNext);
+typedef RequestStreamNSL = Stream<Payload?> Function(int initN, Payload? payload, Function? invokeOnNext);
 typedef RequestChannel = Stream<Payload> Function(Stream<Payload> payloads);
 typedef MetadataPush = Future<void> Function(Payload? payload);
 typedef RSocketClose = void Function();
@@ -26,7 +23,7 @@ class RSocket implements Closeable, Availability {
   FireAndForget? fireAndForget = (Payload? payload) => Future.error(Exception('Unsupported'));
   RequestStream? requestStream = (Payload? payload) => Stream.error(Exception('Unsupported'));
   RequestStreamN? requestStreamN = (int initN, Function? getRegN, Completer? completer, Payload? payload) => Stream.error(Exception('Unsupported'));
-  RequestStreamNSL? requestStreamNSL = (int initN, Payload? payload, DuplexConnection connection, int? streamId, Function? invokeOnNext) => Stream.error(Exception('Unsupported'));
+  RequestStreamNSL? requestStreamNSL = (int initN, Payload? payload, Function? invokeOnNext) => Stream.error(Exception('Unsupported'));
   RequestChannel? requestChannel = (Stream<Payload> payloads) => Stream.error(Exception('Unsupported'));
   MetadataPush? metadataPush = (Payload? payload) => Future.error(Exception('Unsupported'));
   RequestResponse? subscribe= (Payload? payload)=> Future.error(Exception('Unsupported'));
