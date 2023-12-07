@@ -44,24 +44,31 @@ class CompleterSubscriber implements Subscriber {
   }
 }
 
+
+
 class StreamSubscriber implements Subscriber {
   final StreamController controller;
-int recvN;
-  Function()? getReqN;
+  final Completer? completer;
+  final Function? onGetReqN;
+  
+  int recvN;
 
   StreamSubscriber(
-      {int initN = MAX_REQUEST_N_SIZE,
-      int onGetReqN()? = null,
-      FutureOr<void> onCancel()? = null})
-      : controller = StreamController(onCancel: onCancel),
-        recvN = initN,
-        getReqN = onGetReqN;
+    {int initN = MAX_REQUEST_N_SIZE,
+    this.completer,
+    this.onGetReqN, 
+    FutureOr<void> onCancel()? = null}) : controller = StreamController(onCancel: onCancel),
+        recvN = initN;
 
   @override
-  void onNext(Payload? value) {
+  void onNext(Payload? value) async{
     controller.add(value);
-        if (getReqN != null && recvN < MAX_REQUEST_N_SIZE && --recvN == 0) {
-      recvN = getReqN!();
+    if (recvN < MAX_REQUEST_N_SIZE && --recvN == 0) {
+      final completer = this.completer;
+      if(completer != null){
+        await completer.future;
+      }
+      recvN = onGetReqN?.call();
     }
   }
 
@@ -143,7 +150,7 @@ class RSocketRequester extends RSocket {
       senders[streamId] = streamSubscriber;
       return streamSubscriber.payloadStream();
     };
-    //RSocket requestStream
+    //RSocket requestStreamN
     requestStreamN = (initN, payload, getReqN) {
       var streamId = streamIdSupplier.nextStreamId(senders)!;
       connection.write(
