@@ -151,7 +151,7 @@ class RSocketRequester extends RSocket {
       return streamSubscriber.payloadStream();
     };
     //RSocket requestStreamN
-    requestStreamN = (initN, payload, getReqN) {
+    requestStreamN = (initN, getReqN, Completer, payload) {
       var streamId = streamIdSupplier.nextStreamId(senders)!;
       connection.write(
           FrameCodec.encodeRequestStreamFrame(streamId, initN, payload!));

@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'payload.dart';
 
 typedef RequestResponse = Future<Payload> Function(Payload? payload);
 typedef FireAndForget = Future<void> Function(Payload? payload);
 typedef RequestStream = Stream<Payload?> Function(Payload? payload);
-typedef RequestStreamN = Stream<Payload?> Function(
-    int initN, Payload? payload, Function()? getRegN);
+typedef RequestStreamN = Stream<Payload?> Function(int initN,Function? getRegN, Completer? completer, Payload? payload);
 typedef RequestChannel = Stream<Payload> Function(Stream<Payload> payloads);
 typedef MetadataPush = Future<void> Function(Payload? payload);
 typedef RSocketClose = void Function();
@@ -18,19 +19,12 @@ abstract class Availability {
 }
 
 class RSocket implements Closeable, Availability {
-  RequestResponse? requestResponse =
-      (Payload? payload) => Future.error(Exception('Unsupported'));
-  FireAndForget? fireAndForget =
-      (Payload? payload) => Future.error(Exception('Unsupported'));
-  RequestStream? requestStream =
-      (Payload? payload) => Stream.error(Exception('Unsupported'));
-  RequestStreamN? requestStreamN =
-      (int initN, Payload? payload, Function()? getRegN) =>
-          Stream.error(Exception('Unsupported'));
-  RequestChannel? requestChannel =
-      (Stream<Payload> payloads) => Stream.error(Exception('Unsupported'));
-  MetadataPush? metadataPush =
-      (Payload? payload) => Future.error(Exception('Unsupported'));
+  RequestResponse? requestResponse = (Payload? payload) => Future.error(Exception('Unsupported'));
+  FireAndForget? fireAndForget = (Payload? payload) => Future.error(Exception('Unsupported'));
+  RequestStream? requestStream = (Payload? payload) => Stream.error(Exception('Unsupported'));
+  RequestStreamN? requestStreamN = (int initN, Function? getRegN, Completer? completer, Payload? payload) => Stream.error(Exception('Unsupported'));
+  RequestChannel? requestChannel = (Stream<Payload> payloads) => Stream.error(Exception('Unsupported'));
+  MetadataPush? metadataPush = (Payload? payload) => Future.error(Exception('Unsupported'));
   RequestResponse? subscribe= (Payload? payload)=> Future.error(Exception('Unsupported'));
   @override
   void close() {}
